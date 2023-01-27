@@ -1,18 +1,4 @@
-services:
-  postgres:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 5s
-      retries: 5
-    restart: always
-
+# Create a Postgres container
 docker run -it \
   -e POSTGRES_USER="root" \
   -e POSTGRES_PASSWORD="root" \
@@ -21,17 +7,17 @@ docker run -it \
   -p 5432:5432 \
   postgres:13
 
+# Create a pgadmin container
 docker run -it \
   -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
   -e PGADMIN_DEFAULT_PASSWORD="root" \
   -p 8080:80 \
   dpage/pgadmin4
 
-
-## Network
-
+# Create a Network
 docker network create pg-network
 
+# Now the same 2 containers (postgres and pgadmin on the network)
 docker run -it \
   -e POSTGRES_USER="root" \
   -e POSTGRES_PASSWORD="root" \
@@ -50,12 +36,27 @@ docker run -it \
   --name pgadmin \
   dpage/pgadmin4
 
+# run ingest script with input args
 python ingest_data.py \
   --user=root \
   --password=root \
   --host=localhost \
   --port=5432 \
   --db=ny_taxi \
-  --table_name=green_taxi_trips
+  --table_name=green_taxi_trips \
   --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-01.csv.gz"
 
+# if you want to build an image from dockerfile
+docker build -t taxi_ingest:v001
+
+# run the dockerfile image on the network
+docker run -it \
+  --network=pg-network \
+  taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=pg-database \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_taxi_trips \
+    --url="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-01.csv.gz"

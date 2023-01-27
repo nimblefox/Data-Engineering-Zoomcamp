@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import os
+import wget
 from time import time
 from sqlalchemy import create_engine
 
@@ -15,19 +16,18 @@ def main(params):
     url = params.url
     csv_name = 'output.csv'
 
-    os.system(f"wget {url} -O {csv_name}")
+    wget.download(url=url, out=csv_name)
 
     engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
-    df_iter = pd.read_csv(csv_name, iterator=True, chunksize=100000)
+    engine.connect()
+    df_iter = pd.read_csv(csv_name, iterator=True, chunksize=100000, compression='gzip')
     df = next(df_iter)
-
     df.tpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)
     df.tpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)
 
     # head with n=0 returns headers; so running the below creates a empty database with given schema
-    df.head(n=0).to_sql(name='table_name', con=engine, if_exists='replace')
-
-    df.to_sql(name='table_name', con=engine, if_exists='append')
+    df.head(n=0).to_sql(name=table_name, con=engine, if_exists='replace')
+    df.to_sql(name=table_name, con=engine, if_exists='append')
 
     while True:
         t_start = time()

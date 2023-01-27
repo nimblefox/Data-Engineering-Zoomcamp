@@ -1,0 +1,41 @@
+-- check info schema
+SELECT 
+   table_name, 
+   column_name, 
+   data_type 
+FROM 
+   information_schema.columns
+WHERE 
+   table_name = 'green_taxi_trips';
+
+-- Check data
+SELECT * FROM green_taxi_trips LIMIT 10;
+
+-- convert datattype
+ALTER TABLE green_taxi_trips ALTER COLUMN lpep_pickup_datetime TYPE TIMESTAMP using TO_TIMESTAMP(lpep_pickup_datetime, 'YYYY-MM-DD HH24:MI:SS');
+ALTER TABLE green_taxi_trips ALTER COLUMN lpep_dropoff_datetime TYPE TIMESTAMP using TO_TIMESTAMP(lpep_dropoff_datetime, 'YYYY-MM-DD HH24:MI:SS');
+
+-- Q3 : 20698
+SELECT COUNT(*)
+FROM green_taxi_trips
+WHERE lpep_pickup_datetime::date = '2019-01-15'
+
+-- Q4 : 2019-01-15
+SELECT * FROM green_taxi_trips ORDER BY trip_distance DESC LIMIT 1;
+
+-- Q5 : 
+SELECT COUNT(*)
+FROM green_taxi_trips
+WHERE lpep_pickup_datetime::date = '2019-01-01' AND passenger_count = 2
+
+SELECT COUNT(*)
+FROM green_taxi_trips
+WHERE lpep_pickup_datetime::date = '2019-01-01'  AND passenger_count = 3
+
+-- Q6 :
+SELECT * FROM zones
+
+SELECT * FROM green_taxi_trips
+LEFT JOIN zones
+ON green_taxi_trips.PULocationID = zones.LocationID
+ORDER BY green_taxi_trips.tip_amount DESC LIMIT 1;
